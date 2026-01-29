@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spelling Bees 🐝</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>🐝 Spelling Bees 🐝</h1>
+        <p class="subtitle">Spell the word to set the bees free!</p>
+    </header>
+
+    <main>
+        <div class="card" id="game-card">
+            <div class="score-bar">
+                <div class="score-item"><span class="score-label">Streak</span><span class="score-value" id="score">0</span></div>
+                <div class="score-item"><span class="score-label">Best</span><span class="high-score-value" id="high-score">0</span></div>
+            </div>
+            <div class="emoji-display" id="emoji-display"></div>
+            <div class="word-area" id="word-area">
+                <!-- Letters with bee overlays rendered here -->
+            </div>
+            <div class="input-area">
+                <input
+                    type="text"
+                    id="guess-input"
+                    autocomplete="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                    placeholder="Type the word..."
+                    maxlength="20"
+                >
+                <button id="submit-btn" aria-label="Check"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>
+            </div>
+            <div class="feedback" id="feedback"></div>
+            <div class="congrats" id="congrats">
+                <div class="congrats-text" id="congrats-text">Great spelling!</div>
+                <button id="next-btn">Next Word →</button>
+            </div>
+        </div>
+    </main>
+
+    <script src="words.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
