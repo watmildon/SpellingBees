@@ -83,6 +83,12 @@ main {
     color: #e67e22;
 }
 
+.bees-freed-value {
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: #2ecc71;
+}
+
 .high-score-value {
     font-weight: 700;
     font-size: 1.3rem;
@@ -95,28 +101,52 @@ main {
     user-select: none;
 }
 
+#speak-btn {
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffd700;
+    color: #4a3728;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.2s, transform 0.1s;
+}
+
+#speak-btn:hover {
+    background: #ffcc00;
+}
+
+#speak-btn:active {
+    transform: scale(0.92);
+}
+
 /* --- Word Area with Bees --- */
 
 .word-area {
     display: flex;
     gap: 4px;
     justify-content: center;
-    flex-wrap: wrap;
     min-height: 60px;
     padding: 10px 0;
+    width: 100%;
 }
 
 .letter-slot {
     position: relative;
-    width: 40px;
-    height: 50px;
+    width: calc(40px * var(--slot-scale, 1));
+    height: calc(50px * var(--slot-scale, 1));
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .letter-char {
-    font-size: 2rem;
+    font-size: calc(2rem * var(--slot-scale, 1));
     font-weight: 700;
     color: #4a3728;
     text-transform: uppercase;
@@ -130,17 +160,28 @@ main {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 38px;
-    height: 38px;
-    background: #ffd700;
-    border-radius: 50%;
-    border: 2px solid #daa520;
+    width: calc(48px * var(--slot-scale, 1));
+    height: calc(48px * var(--slot-scale, 1));
     z-index: 2;
     cursor: default;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     transition: opacity 0.1s;
+}
+
+.bee svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+/* Wing flutter animation on the SVG wing group */
+.bee-wings {
+    animation: wing-flutter 0.18s ease-in-out infinite alternate;
+    transform-origin: 210px 150px;
+}
+
+@keyframes wing-flutter {
+    0%   { transform: rotate(0deg) scale(1); }
+    100% { transform: rotate(-6deg) scale(0.92, 1.05); }
 }
 
 /* Subtle idle wobble for the bees */
@@ -198,7 +239,7 @@ main {
     display: flex;
     gap: 10px;
     width: 100%;
-    max-width: 340px;
+    max-width: 400px;
 }
 
 #guess-input {
@@ -318,17 +359,17 @@ main {
     }
 
     .letter-slot {
-        width: 32px;
-        height: 42px;
+        width: calc(32px * var(--slot-scale, 1));
+        height: calc(42px * var(--slot-scale, 1));
     }
 
     .letter-char {
-        font-size: 1.5rem;
+        font-size: calc(1.5rem * var(--slot-scale, 1));
     }
 
     .bee {
-        width: 30px;
-        height: 30px;
+        width: calc(38px * var(--slot-scale, 1));
+        height: calc(38px * var(--slot-scale, 1));
     }
 
     #guess-input {
