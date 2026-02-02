@@ -1,3 +1,5 @@
+<img width="511" height="559" alt="image" src="https://github.com/user-attachments/assets/4f9a8f02-0dfd-40c5-801a-737fec22e00c" />
+
 # Spelling Bees
 
 A children's spelling game. An emoji is shown and the player types the matching word to free the bees.
