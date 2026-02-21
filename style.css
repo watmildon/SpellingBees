@@ -237,25 +237,55 @@ main {
 
 .input-area {
     display: flex;
+    flex-direction: column;
+    align-items: center;
     gap: 10px;
     width: 100%;
-    max-width: 400px;
 }
 
-#guess-input {
-    flex: 1;
-    font-size: 1.3rem;
-    padding: 10px 16px;
-    border: 3px solid #ddd;
-    border-radius: 12px;
-    outline: none;
-    text-transform: lowercase;
+.letter-inputs {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.letter-input {
+    width: 40px;
+    height: 48px;
+    font-size: 1.4rem;
+    font-weight: 700;
+    text-align: center;
+    text-transform: uppercase;
     font-family: 'Courier New', Courier, monospace;
-    transition: border-color 0.2s;
+    border: 3px solid #ddd;
+    border-radius: 10px;
+    outline: none;
+    background: #fff;
+    color: #4a3728;
+    caret-color: transparent;
+    transition: border-color 0.2s, background 0.2s;
 }
 
-#guess-input:focus {
+.letter-input:focus {
     border-color: #ffd700;
+    background: #fffbe6;
+}
+
+.letter-input.filled {
+    border-color: #f0c040;
+}
+
+.letter-input.revealed {
+    background: #e8f8e8;
+    border-color: #2ecc71;
+    color: #2ecc71;
+    font-weight: 800;
+}
+
+.input-buttons {
+    display: flex;
+    gap: 10px;
 }
 
 #submit-btn {
@@ -372,9 +402,14 @@ main {
         height: calc(38px * var(--slot-scale, 1));
     }
 
-    #guess-input {
+    .letter-input {
+        width: 32px;
+        height: 40px;
         font-size: 1.1rem;
-        padding: 8px 12px;
+    }
+
+    .letter-inputs {
+        gap: 4px;
     }
 
     .card {

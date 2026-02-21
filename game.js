@@ -4,7 +4,7 @@
     // --- DOM refs ---
     const emojiDisplay = document.getElementById("emoji-display");
     const wordArea = document.getElementById("word-area");
-    const guessInput = document.getElementById("guess-input");
+    const letterInputsContainer = document.getElementById("letter-inputs");
     const submitBtn = document.getElementById("submit-btn");
     const feedback = document.getElementById("feedback");
     const congrats = document.getElementById("congrats");
@@ -90,40 +90,169 @@
         }
     }
 
+    // --- Build individual letter input boxes ---
+    function buildLetterInputs(word) {
+        letterInputsContainer.innerHTML = "";
+        for (let i = 0; i < word.length; i++) {
+            const input = document.createElement("input");
+            input.type = "text";
+            input.className = "letter-input";
+            input.maxLength = 1;
+            input.autocomplete = "off";
+            input.setAttribute("autocapitalize", "off");
+            input.setAttribute("spellcheck", "false");
+            input.dataset.index = i;
+
+            input.addEventListener("input", handleLetterInput);
+            input.addEventListener("keydown", handleLetterKeydown);
+            input.addEventListener("focus", handleLetterFocus);
+
+            letterInputsContainer.appendChild(input);
+        }
+    }
+
+    // --- Get all letter input elements ---
+    function getLetterInputs() {
+        return letterInputsContainer.querySelectorAll(".letter-input");
+    }
+
+    // --- Focus the first unrevealed empty input ---
+    function focusFirstEmpty() {
+        const inputs = getLetterInputs();
+        for (let i = 0; i < inputs.length; i++) {
+            if (!revealedLetters[i] && !inputs[i].value) {
+                inputs[i].focus();
+                return;
+            }
+        }
+        // All filled — focus last unrevealed
+        for (let i = inputs.length - 1; i >= 0; i--) {
+            if (!revealedLetters[i]) {
+                inputs[i].focus();
+                return;
+            }
+        }
+    }
+
+    // --- Handle typing a letter ---
+    function handleLetterInput(e) {
+        const input = e.target;
+        const val = input.value;
+
+        // Only allow letters
+        if (val && !/^[a-zA-Z]$/.test(val)) {
+            input.value = "";
+            return;
+        }
+
+        if (val) {
+            input.classList.add("filled");
+            // Auto-advance to next unrevealed empty input
+            const idx = parseInt(input.dataset.index);
+            const inputs = getLetterInputs();
+            for (let i = idx + 1; i < inputs.length; i++) {
+                if (!revealedLetters[i] && !inputs[i].value) {
+                    inputs[i].focus();
+                    return;
+                }
+            }
+        } else {
+            input.classList.remove("filled");
+        }
+    }
+
+    // --- Handle keydown on letter inputs ---
+    function handleLetterKeydown(e) {
+        const input = e.target;
+        const idx = parseInt(input.dataset.index);
+        const inputs = getLetterInputs();
+
+        if (e.key === "Backspace") {
+            if (input.value) {
+                // Clear current
+                input.value = "";
+                input.classList.remove("filled");
+                e.preventDefault();
+            } else {
+                // Move to previous unrevealed input
+                for (let i = idx - 1; i >= 0; i--) {
+                    if (!revealedLetters[i]) {
+                        inputs[i].focus();
+                        inputs[i].value = "";
+                        inputs[i].classList.remove("filled");
+                        e.preventDefault();
+                        return;
+                    }
+                }
+            }
+        } else if (e.key === "ArrowLeft") {
+            for (let i = idx - 1; i >= 0; i--) {
+                if (!revealedLetters[i]) {
+                    inputs[i].focus();
+                    return;
+                }
+            }
+        } else if (e.key === "ArrowRight") {
+            for (let i = idx + 1; i < inputs.length; i++) {
+                if (!revealedLetters[i]) {
+                    inputs[i].focus();
+                    return;
+                }
+            }
+        } else if (e.key === "Enter") {
+            e.preventDefault();
+            handleSubmit();
+        } else if (/^[a-zA-Z]$/.test(e.key) && input.value) {
+            // Replace current letter and advance
+            input.value = e.key;
+            input.classList.add("filled");
+            e.preventDefault();
+            const nextInputs = getLetterInputs();
+            for (let i = idx + 1; i < nextInputs.length; i++) {
+                if (!revealedLetters[i] && !nextInputs[i].value) {
+                    nextInputs[i].focus();
+                    return;
+                }
+            }
+        }
+    }
+
+    // --- Prevent focusing on revealed inputs ---
+    function handleLetterFocus(e) {
+        const idx = parseInt(e.target.dataset.index);
+        if (revealedLetters[idx]) {
+            // Redirect focus to first unrevealed empty input
+            focusFirstEmpty();
+        }
+    }
+
+    // --- Collect guess from individual inputs ---
+    function collectGuess() {
+        const inputs = getLetterInputs();
+        let guess = "";
+        for (let i = 0; i < inputs.length; i++) {
+            if (revealedLetters[i]) {
+                guess += currentWord[i];
+            } else {
+                guess += inputs[i].value || " ";
+            }
+        }
+        return guess;
+    }
+
     // --- Reveal letters by flying bees away ---
     // Returns the number of newly revealed letters this turn.
     function revealMatching(guess) {
         let newReveals = 0;
-
-        // Find the longest prefix of the answer that matches the guess,
-        // considering already-revealed positions.
-        // Strategy: walk through positions left-to-right. For each position
-        // that is not yet revealed, check if the guess (consumed in order)
-        // matches.
-        //
-        // We match contiguously from the start: reveal letters from the
-        // beginning of the word as long as the guess characters match.
+        let revealOrder = 0;
 
         const slots = wordArea.querySelectorAll(".letter-slot");
         const guessLower = guess.toLowerCase();
         const wordLower = currentWord.toLowerCase();
 
-        // Determine how many letters from the start are correctly matched.
-        // We compare character by character. If a position is already revealed
-        // it still needs to match (the guess should include it).
-        let matchCount = 0;
-        const limit = Math.min(guessLower.length, wordLower.length);
-        for (let i = 0; i < limit; i++) {
-            if (guessLower[i] === wordLower[i]) {
-                matchCount++;
-            } else {
-                break;
-            }
-        }
-
-        // Reveal up to matchCount
-        for (let i = 0; i < matchCount; i++) {
-            if (!revealedLetters[i]) {
+        // Check each position independently
+        for (let i = 0; i < wordLower.length; i++) {
+            if (!revealedLetters[i] && guessLower[i] === wordLower[i]) {
                 revealedLetters[i] = true;
                 newReveals++;
 
@@ -138,9 +267,10 @@
                 bee.style.setProperty("--fly-y", flyY + "px");
                 bee.style.setProperty("--fly-rot", flyRot + "deg");
 
-                // Stagger slightly
-                bee.style.animationDelay = (i * 0.07) + "s";
+                // Stagger slightly based on reveal order
+                bee.style.animationDelay = (revealOrder * 0.07) + "s";
                 bee.classList.add("fly-away");
+                revealOrder++;
 
                 // After animation, mark slot revealed
                 slot.classList.add("revealed");
@@ -171,10 +301,26 @@
         totalBeesFreedEl.textContent = totalBeesFreed;
     }
 
+    // --- Update letter inputs after a reveal ---
+    function syncInputsAfterReveal() {
+        const inputs = getLetterInputs();
+        for (let i = 0; i < inputs.length; i++) {
+            if (revealedLetters[i]) {
+                inputs[i].value = currentWord[i].toUpperCase();
+                inputs[i].classList.add("revealed");
+                inputs[i].classList.remove("filled");
+                inputs[i].disabled = true;
+            } else {
+                inputs[i].value = "";
+                inputs[i].classList.remove("filled");
+                inputs[i].disabled = false;
+            }
+        }
+    }
+
     // --- Load a round ---
     function loadRound() {
         if (wordIndex >= shuffledList.length) {
-            // Reshuffle and start over
             shuffledList = shuffle(WORD_LIST);
             wordIndex = 0;
         }
@@ -186,18 +332,33 @@
 
         emojiDisplay.textContent = emoji;
         buildWordArea(word);
-        guessInput.maxLength = word.length;
+        buildLetterInputs(word);
         feedback.textContent = "";
         feedback.className = "feedback";
-        guessInput.value = "";
-        guessInput.focus();
+        submitBtn.disabled = false;
+        focusFirstEmpty();
+    }
 
+    // --- Check if all unrevealed inputs are filled ---
+    function allInputsFilled() {
+        const inputs = getLetterInputs();
+        for (let i = 0; i < inputs.length; i++) {
+            if (!revealedLetters[i] && !inputs[i].value) {
+                return false;
+            }
+        }
+        return true;
     }
 
     // --- Submit guess ---
     function handleSubmit() {
-        const guess = guessInput.value.trim();
-        if (!guess) return;
+        if (!allInputsFilled()) {
+            feedback.textContent = "Fill in every letter first!";
+            feedback.className = "feedback try-again";
+            focusFirstEmpty();
+            return;
+        }
+        const guess = collectGuess();
 
         attempts++;
         const newReveals = revealMatching(guess);
@@ -205,40 +366,37 @@
         if (allRevealed()) {
             feedback.textContent = "";
             feedback.className = "feedback success";
-            guessInput.value = "";
-            guessInput.disabled = true;
+            syncInputsAfterReveal();
             submitBtn.disabled = true;
 
             // Show congrats after bee animations finish
             const delay = currentWord.length * 70 + 800;
-            setTimeout(() => {
+            setTimeout(function () {
                 showCongrats();
             }, delay);
         } else if (newReveals > 0) {
-            // Partial match
-            const remaining = revealedLetters.filter((r) => !r).length;
-            feedback.textContent = `Nice! ${remaining} letter${remaining !== 1 ? "s" : ""} left. Try again!`;
+            const remaining = revealedLetters.filter(function (r) { return !r; }).length;
+            feedback.textContent = "Nice! " + remaining + " letter" + (remaining !== 1 ? "s" : "") + " left. Try again!";
             feedback.className = "feedback try-again";
-            guessInput.value = "";
-            guessInput.focus();
+            syncInputsAfterReveal();
+            focusFirstEmpty();
         } else {
-            // No new reveals
-            feedback.textContent = "Not quite — try again!";
+            feedback.textContent = "Not quite \u2014 try again!";
             feedback.className = "feedback try-again";
-            guessInput.value = "";
-            guessInput.focus();
+            syncInputsAfterReveal();
+            focusFirstEmpty();
         }
     }
 
     // --- Congrats ---
     function showCongrats() {
         const messages = [
-            "Great spelling! 🌟",
-            "You did it! 🎉",
-            "Wonderful! ⭐",
-            "Amazing work! 🏆",
-            "Bee-utiful! 🐝",
-            "Super speller! 💪",
+            "Great spelling! \uD83C\uDF1F",
+            "You did it! \uD83C\uDF89",
+            "Wonderful! \u2B50",
+            "Amazing work! \uD83C\uDFC6",
+            "Bee-utiful! \uD83D\uDC1D",
+            "Super speller! \uD83D\uDCAA",
         ];
         congratsText.textContent = messages[Math.floor(Math.random() * messages.length)];
         congrats.classList.add("visible");
@@ -252,21 +410,11 @@
     function nextRound() {
         hideCongrats();
         wordIndex++;
-        guessInput.disabled = false;
-        submitBtn.disabled = false;
         loadRound();
     }
 
     // --- Event listeners ---
     submitBtn.addEventListener("click", handleSubmit);
-
-    guessInput.addEventListener("keydown", function (e) {
-        if (e.key === "Enter") {
-            e.preventDefault();
-            handleSubmit();
-        }
-    });
-
     nextBtn.addEventListener("click", nextRound);
     speakBtn.addEventListener("click", speakWord);
 

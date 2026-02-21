@@ -24,17 +24,13 @@
                 <!-- Letters with bee overlays rendered here -->
             </div>
             <div class="input-area">
-                <input
-                    type="text"
-                    id="guess-input"
-                    autocomplete="off"
-                    autocapitalize="off"
-                    spellcheck="false"
-                    placeholder="Type the word..."
-                    maxlength="20"
-                >
-                <button id="submit-btn" aria-label="Check"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>
-                <button id="speak-btn" aria-label="Hear the word" title="Hear the word"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg></button>
+                <div class="letter-inputs" id="letter-inputs">
+                    <!-- Individual letter inputs rendered by JS -->
+                </div>
+                <div class="input-buttons">
+                    <button id="submit-btn" aria-label="Check"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>
+                    <button id="speak-btn" aria-label="Hear the word" title="Hear the word"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg></button>
+                </div>
             </div>
             <div class="feedback" id="feedback"></div>
             <div class="congrats" id="congrats">
