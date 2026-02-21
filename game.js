@@ -21,6 +21,7 @@
     let wordIndex = 0;
     let shuffledList = [];
     let attempts = 0;
+    let hintLevel = 0; // 0, 1, 2 — escalates with each no-reveal guess
     let score = 0;
     let highScore = parseInt(localStorage.getItem("spellingBees_highScore")) || 0;
     let totalBeesFreed = parseInt(localStorage.getItem("spellingBees_totalBeesFreed")) || 0;
@@ -93,6 +94,9 @@
     // --- Build individual letter input boxes ---
     function buildLetterInputs(word) {
         letterInputsContainer.innerHTML = "";
+        // Scale down for long words so they fit on one line
+        const scale = Math.min(1, 9 / word.length);
+        letterInputsContainer.style.setProperty("--input-scale", scale);
         for (let i = 0; i < word.length; i++) {
             const input = document.createElement("input");
             input.type = "text";
@@ -259,6 +263,9 @@
                 const slot = slots[i];
                 const bee = slot.querySelector(".bee");
 
+                // Clear any peek hint classes so fly-away can take over
+                bee.classList.remove("peek-1", "peek-2", "peek-3");
+
                 // Randomize fly direction
                 const flyX = (Math.random() - 0.5) * 200;
                 const flyY = -(100 + Math.random() * 200);
@@ -278,12 +285,7 @@
         }
 
         if (newReveals > 0) {
-            score += newReveals;
             totalBeesFreed += newReveals;
-            if (score > highScore) {
-                highScore = score;
-                localStorage.setItem("spellingBees_highScore", highScore);
-            }
             localStorage.setItem("spellingBees_totalBeesFreed", totalBeesFreed);
             updateScoreDisplay();
         }
@@ -329,6 +331,7 @@
         currentWord = word;
         revealedLetters = new Array(word.length).fill(false);
         attempts = 0;
+        hintLevel = 0;
 
         emojiDisplay.textContent = emoji;
         buildWordArea(word);
@@ -364,6 +367,14 @@
         const newReveals = revealMatching(guess);
 
         if (allRevealed()) {
+            // Word complete — add freed bees to streak
+            score += newReveals;
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem("spellingBees_highScore", highScore);
+            }
+            updateScoreDisplay();
+
             feedback.textContent = "";
             feedback.className = "feedback success";
             syncInputsAfterReveal();
@@ -375,16 +386,38 @@
                 showCongrats();
             }, delay);
         } else if (newReveals > 0) {
+            // Some letters right, some wrong — streak breaks
+            hintLevel = 0;
+            score = 0;
+            updateScoreDisplay();
             const remaining = revealedLetters.filter(function (r) { return !r; }).length;
             feedback.textContent = "Nice! " + remaining + " letter" + (remaining !== 1 ? "s" : "") + " left. Try again!";
             feedback.className = "feedback try-again";
             syncInputsAfterReveal();
             focusFirstEmpty();
         } else {
+            // No letters right — streak breaks
+            score = 0;
+            updateScoreDisplay();
             feedback.textContent = "Not quite \u2014 try again!";
             feedback.className = "feedback try-again";
             syncInputsAfterReveal();
             focusFirstEmpty();
+
+            // Escalating hint: peek the first unrevealed bee
+            var peekClass = "peek-" + (Math.min(hintLevel, 2) + 1);
+            hintLevel = Math.min(hintLevel + 1, 2);
+            var slots = wordArea.querySelectorAll(".letter-slot");
+            for (var i = 0; i < slots.length; i++) {
+                if (!revealedLetters[i]) {
+                    var bee = slots[i].querySelector(".bee");
+                    bee.classList.remove("peek-1", "peek-2", "peek-3");
+                    // Force reflow so the animation can retrigger
+                    void bee.offsetWidth;
+                    bee.classList.add(peekClass);
+                    break;
+                }
+            }
         }
     }
 
